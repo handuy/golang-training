@@ -1,17 +1,10 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"golang-crud/controller"
+	"golang-crud/route"
 )
 
-func main(){
-	env, err := controller.NewEnv()
-	if err != nil {
-		panic(err)
-	}
-
-	r := gin.Default()
-	r.GET("/", env.GetAllNote)
+func main() {
+	r := route.SetupRoute()
 	r.Run("localhost:8181")
 }

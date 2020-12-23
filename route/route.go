@@ -14,7 +14,8 @@ func SetupRoute() *gin.Engine {
 
 	r.GET("/", env.GetAllNote)
 	r.GET("/:id", env.GetNoteById)
-	r.POST("/new", env.GetNoteById)
+	r.POST("/new", env.CreateNote)
+	r.POST("/update", env.UpdateNote)
 
 	return r
 }

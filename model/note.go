@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"log"
 	"gorm.io/gorm"
 )
 
@@ -15,8 +16,19 @@ type note struct {
 	UpdatedAt time.Time
 }
 
-type ErrorMessage struct {
+type StatusMessage struct {
 	Message string
+}
+
+type NewNote struct {
+	Title string
+}
+
+type UpdatedNote struct {
+	Id        int
+	Title     string
+	Status    bool
+	UpdatedAt time.Time
 }
 
 func GetAllNotes(db *gorm.DB) ([]note, error) {
@@ -47,4 +59,32 @@ func GetNoteById(db *gorm.DB, noteId int) (note, error) {
 	}
 
 	return result, nil
+}
+
+func InsertNote(db *gorm.DB, newNote NewNote) (note, error) {
+	var result note
+	result.Title = newNote.Title
+	result.Status = false
+	result.CreatedAt = time.Now()
+
+	err := db.Create(&result).Error
+	if err != nil {
+		return note{}, err
+	}
+
+	return result, nil
+}
+
+func UpdateNote(db *gorm.DB, updateNote UpdatedNote) error {
+	log.Println("updateNote", updateNote)
+	var noteToUpdate note
+	noteToUpdate.Id = updateNote.Id
+
+	err := db.Model(&noteToUpdate).Select("title", "status", "updated_at").Updates(updateNote).Error
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }

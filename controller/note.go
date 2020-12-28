@@ -82,3 +82,31 @@ func (env *env) UpdateNote(c *gin.Context) {
 		Message: "Cập nhật thành công",
 	})
 }
+
+func (env *env) DeleteNote(c *gin.Context) {
+	var deleteNote model.DeletedNote
+	if err := c.ShouldBindJSON(&deleteNote); err != nil {
+		c.JSON(http.StatusBadRequest, model.StatusMessage{
+			Message: "Bad request",
+		})
+		return
+	}
+	if deleteNote.Id == 0 {
+		c.JSON(http.StatusBadRequest, model.StatusMessage{
+			Message: "Bad request",
+		})
+		return
+	}
+
+	err := model.DeleteNote(env.db, deleteNote)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, model.StatusMessage{
+			Message: "Không thể xóa note",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, model.StatusMessage{
+		Message: "Xóa thành công",
+	})
+}

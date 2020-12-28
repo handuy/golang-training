@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"log"
 	"gorm.io/gorm"
 )
 
@@ -29,6 +28,10 @@ type UpdatedNote struct {
 	Title     string
 	Status    bool
 	UpdatedAt time.Time
+}
+
+type DeletedNote struct {
+	Id int
 }
 
 func GetAllNotes(db *gorm.DB) ([]note, error) {
@@ -76,12 +79,22 @@ func InsertNote(db *gorm.DB, newNote NewNote) (note, error) {
 }
 
 func UpdateNote(db *gorm.DB, updateNote UpdatedNote) error {
-	log.Println("updateNote", updateNote)
 	result := db.Omit("created_at").Updates(&note{
-		Id: updateNote.Id,
-		Title: updateNote.Title,
-		Status: updateNote.Status,
+		Id:        updateNote.Id,
+		Title:     updateNote.Title,
+		Status:    updateNote.Status,
 		UpdatedAt: updateNote.UpdatedAt,
+	}).RowsAffected
+	if result == 0 {
+		return errors.New("Không tìm thấy note")
+	}
+
+	return nil
+}
+
+func DeleteNote(db *gorm.DB, deletedNote DeletedNote) error {
+	result := db.Delete(&note{
+		Id:        deletedNote.Id,
 	}).RowsAffected
 	if result == 0 {
 		return errors.New("Không tìm thấy note")

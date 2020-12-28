@@ -77,13 +77,14 @@ func InsertNote(db *gorm.DB, newNote NewNote) (note, error) {
 
 func UpdateNote(db *gorm.DB, updateNote UpdatedNote) error {
 	log.Println("updateNote", updateNote)
-	var noteToUpdate note
-	noteToUpdate.Id = updateNote.Id
-
-	err := db.Model(&noteToUpdate).Select("title", "status", "updated_at").Updates(updateNote).Error
-	if err != nil {
-		log.Println(err)
-		return err
+	result := db.Omit("created_at").Updates(&note{
+		Id: updateNote.Id,
+		Title: updateNote.Title,
+		Status: updateNote.Status,
+		UpdatedAt: updateNote.UpdatedAt,
+	}).RowsAffected
+	if result == 0 {
+		return errors.New("Không tìm thấy note")
 	}
 
 	return nil

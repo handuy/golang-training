@@ -2,6 +2,7 @@ package controller
 
 import (
 	"golang-crud/model"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -41,6 +42,16 @@ func (env *Env) GetNoteById(c *gin.Context) {
 }
 
 func (env *Env) CreateNote(c *gin.Context) {
+	reqToken := c.GetHeader("Authorization")
+	userID, errParseToken := GetUserIDFromToken(reqToken, env.TokenSecret)
+	log.Println("userID", userID)
+	if errParseToken != nil {
+		c.JSON(http.StatusBadRequest, model.StatusMessage{
+			Message: "Invalid token",
+		})
+		return
+	}
+
 	var newNote model.NewNote
 	if err := c.ShouldBindJSON(&newNote); err != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
@@ -49,7 +60,7 @@ func (env *Env) CreateNote(c *gin.Context) {
 		return
 	}
 
-	result, err := model.InsertNote(env.Db, newNote)
+	result, err := model.InsertNote(env.Db, newNote, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, model.StatusMessage{
 			Message: "Không thể tạo note mới",

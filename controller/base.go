@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	jwt_lib "github.com/dgrijalva/jwt-go"
@@ -103,4 +105,36 @@ func HashAndSalt(userPass []byte) (string, error) {
 		return "", err
 	}
 	return string(hash), nil
+}
+
+func GetUserIDFromToken(token string, tokenSecret string) (string, error) {
+	var userID string
+	splitToken := strings.Split(token, "Bearer ")[1]
+
+	claims := jwt_lib.MapClaims{}
+
+	tkn, err := jwt_lib.ParseWithClaims(splitToken, claims, func(token *jwt_lib.Token) (interface{}, error) {
+		return []byte(tokenSecret), nil
+	})
+
+	if err != nil {
+		log.Println(err)
+		return userID, err
+	}
+
+	if !tkn.Valid {
+		return userID, errors.New("Token không hợp lệ")
+	}
+
+	for k, v := range claims {
+		if k == "ID" {
+			userID = v.(string)
+		}
+	}
+
+	if userID == "" {
+		return userID, errors.New("Token không hợp lệ")
+	}
+
+	return userID, nil
 }

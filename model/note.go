@@ -11,6 +11,7 @@ type Note struct {
 	Id        int
 	Title     string
 	Status    bool
+	Author    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -64,10 +65,11 @@ func GetNoteById(db *gorm.DB, noteId int) (Note, error) {
 	return result, nil
 }
 
-func InsertNote(db *gorm.DB, newNote NewNote) (Note, error) {
+func InsertNote(db *gorm.DB, newNote NewNote, author string) (Note, error) {
 	var result Note
 	result.Title = newNote.Title
 	result.Status = false
+	result.Author = author
 	result.CreatedAt = time.Now()
 
 	err := db.Create(&result).Error

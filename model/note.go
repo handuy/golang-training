@@ -102,10 +102,17 @@ func UpdateNote(db *gorm.DB, updateNote UpdatedNote, userID string) error {
 	return nil
 }
 
-func DeleteNote(db *gorm.DB, deletedNote DeletedNote) error {
-	result := db.Delete(&Note{
-		Id:        deletedNote.Id,
-	}).RowsAffected
+func DeleteNote(db *gorm.DB, deletedNote DeletedNote, userID string) error {
+	getNote, errGetNote := GetNoteById(db, deletedNote.Id)
+	if errGetNote != nil {
+		return errGetNote
+	}
+
+	if getNote.Author != userID {
+		return errors.New("Bạn không có quyền xóa note")
+	}
+
+	result := db.Delete(&getNote).RowsAffected
 	if result == 0 {
 		return errors.New("Không tìm thấy note")
 	}

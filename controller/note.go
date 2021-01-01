@@ -109,6 +109,15 @@ func (env *Env) UpdateNote(c *gin.Context) {
 }
 
 func (env *Env) DeleteNote(c *gin.Context) {
+	reqToken := c.GetHeader("Authorization")
+	userID, errParseToken := GetUserIDFromToken(reqToken, env.TokenSecret)
+	if errParseToken != nil {
+		c.JSON(http.StatusBadRequest, model.StatusMessage{
+			Message: "Invalid token",
+		})
+		return
+	}
+
 	var deleteNote model.DeletedNote
 	if err := c.ShouldBindJSON(&deleteNote); err != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
@@ -123,8 +132,15 @@ func (env *Env) DeleteNote(c *gin.Context) {
 		return
 	}
 
-	err := model.DeleteNote(env.Db, deleteNote)
+	err := model.DeleteNote(env.Db, deleteNote, userID)
 	if err != nil {
+		if err.Error() == "Bạn không có quyền xóa note" {
+			c.JSON(http.StatusUnauthorized, model.StatusMessage{
+				Message: "Bạn không có quyền xóa note",
+			})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, model.StatusMessage{
 			Message: "Không thể xóa note",
 		})

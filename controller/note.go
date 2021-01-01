@@ -2,7 +2,6 @@ package controller
 
 import (
 	"golang-crud/model"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,7 +43,6 @@ func (env *Env) GetNoteById(c *gin.Context) {
 func (env *Env) CreateNote(c *gin.Context) {
 	reqToken := c.GetHeader("Authorization")
 	userID, errParseToken := GetUserIDFromToken(reqToken, env.TokenSecret)
-	log.Println("userID", userID)
 	if errParseToken != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
 			Message: "Invalid token",
@@ -72,6 +70,15 @@ func (env *Env) CreateNote(c *gin.Context) {
 }
 
 func (env *Env) UpdateNote(c *gin.Context) {
+	reqToken := c.GetHeader("Authorization")
+	userID, errParseToken := GetUserIDFromToken(reqToken, env.TokenSecret)
+	if errParseToken != nil {
+		c.JSON(http.StatusBadRequest, model.StatusMessage{
+			Message: "Invalid token",
+		})
+		return
+	}
+
 	var updateNote model.UpdatedNote
 	if err := c.ShouldBindJSON(&updateNote); err != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
@@ -81,8 +88,15 @@ func (env *Env) UpdateNote(c *gin.Context) {
 	}
 
 	updateNote.UpdatedAt = time.Now()
-	err := model.UpdateNote(env.Db, updateNote)
+	err := model.UpdateNote(env.Db, updateNote, userID)
 	if err != nil {
+		if err.Error() == "Bạn không có quyền cập nhật note" {
+			c.JSON(http.StatusUnauthorized, model.StatusMessage{
+				Message: "Bạn không có quyền cập nhật note",
+			})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, model.StatusMessage{
 			Message: "Không thể cập nhật note",
 		})

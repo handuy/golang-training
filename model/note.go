@@ -80,13 +80,21 @@ func InsertNote(db *gorm.DB, newNote NewNote, author string) (Note, error) {
 	return result, nil
 }
 
-func UpdateNote(db *gorm.DB, updateNote UpdatedNote) error {
-	result := db.Omit("created_at").Updates(&Note{
-		Id:        updateNote.Id,
-		Title:     updateNote.Title,
-		Status:    updateNote.Status,
-		UpdatedAt: updateNote.UpdatedAt,
-	}).RowsAffected
+func UpdateNote(db *gorm.DB, updateNote UpdatedNote, userID string) error {
+	getNote, errGetNote := GetNoteById(db, updateNote.Id)
+	if errGetNote != nil {
+		return errGetNote
+	}
+
+	if getNote.Author != userID {
+		return errors.New("Bạn không có quyền cập nhật note")
+	}
+
+	getNote.Title = updateNote.Title
+	getNote.Status = updateNote.Status
+	getNote.UpdatedAt = updateNote.UpdatedAt
+
+	result := db.Omit("created_at", "author").Updates(&getNote).RowsAffected
 	if result == 0 {
 		return errors.New("Không tìm thấy note")
 	}

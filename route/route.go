@@ -11,12 +11,9 @@ func SetupRoute() *gin.Engine {
 		panic(err)
 	}
 	r := gin.Default()
-
-	r.GET("/", env.GetAllNote)
-	r.GET("/:id", env.GetNoteById)
-	r.POST("/new", env.CreateNote)
-	r.POST("/update", env.UpdateNote)
-	r.POST("/delete", env.DeleteNote)
+	groupRoutes := r.Group("/")
+	userRoutes(groupRoutes, env)
+	noteRoutes(groupRoutes, env)
 
 	return r
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (env *env) GetAllNote(c *gin.Context) {
-	result, err := model.GetAllNotes(env.db)
+func (env *Env) GetAllNote(c *gin.Context) {
+	result, err := model.GetAllNotes(env.Db)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return
@@ -18,11 +18,11 @@ func (env *env) GetAllNote(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (env *env) GetNoteById(c *gin.Context) {
+func (env *Env) GetNoteById(c *gin.Context) {
 	id := c.Param("id")
 	idInt, _ := strconv.Atoi(id)
 
-	result, err := model.GetNoteById(env.db, idInt)
+	result, err := model.GetNoteById(env.Db, idInt)
 	if err != nil {
 		if err.Error() == "Không tìm thấy note" {
 			c.JSON(http.StatusNotFound, model.StatusMessage{
@@ -40,7 +40,7 @@ func (env *env) GetNoteById(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (env *env) CreateNote(c *gin.Context) {
+func (env *Env) CreateNote(c *gin.Context) {
 	var newNote model.NewNote
 	if err := c.ShouldBindJSON(&newNote); err != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
@@ -49,7 +49,7 @@ func (env *env) CreateNote(c *gin.Context) {
 		return
 	}
 
-	result, err := model.InsertNote(env.db, newNote)
+	result, err := model.InsertNote(env.Db, newNote)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, model.StatusMessage{
 			Message: "Không thể tạo note mới",
@@ -60,7 +60,7 @@ func (env *env) CreateNote(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (env *env) UpdateNote(c *gin.Context) {
+func (env *Env) UpdateNote(c *gin.Context) {
 	var updateNote model.UpdatedNote
 	if err := c.ShouldBindJSON(&updateNote); err != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
@@ -70,7 +70,7 @@ func (env *env) UpdateNote(c *gin.Context) {
 	}
 
 	updateNote.UpdatedAt = time.Now()
-	err := model.UpdateNote(env.db, updateNote)
+	err := model.UpdateNote(env.Db, updateNote)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, model.StatusMessage{
 			Message: "Không thể cập nhật note",
@@ -83,7 +83,7 @@ func (env *env) UpdateNote(c *gin.Context) {
 	})
 }
 
-func (env *env) DeleteNote(c *gin.Context) {
+func (env *Env) DeleteNote(c *gin.Context) {
 	var deleteNote model.DeletedNote
 	if err := c.ShouldBindJSON(&deleteNote); err != nil {
 		c.JSON(http.StatusBadRequest, model.StatusMessage{
@@ -98,7 +98,7 @@ func (env *env) DeleteNote(c *gin.Context) {
 		return
 	}
 
-	err := model.DeleteNote(env.db, deleteNote)
+	err := model.DeleteNote(env.Db, deleteNote)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, model.StatusMessage{
 			Message: "Không thể xóa note",

@@ -4,18 +4,24 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	jwt_lib "github.com/dgrijalva/jwt-go"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	uuid "github.com/satori/go.uuid"
 )
 
-type env struct {
-	db *gorm.DB
+type Env struct {
+	Db          *gorm.DB
+	TokenSecret string
 }
 
-type dbConfig struct {
+type DbConfig struct {
 	DB_USER    string `mapstructure:"DB_USER"`
 	DB_PASS    string `mapstructure:"DB_PASS"`
 	DB_ADDRESS string `mapstructure:"DB_ADDRESS"`
@@ -30,9 +36,9 @@ var newLogger = logger.New(
 	},
 )
 
-func loadConfig(path string) (config dbConfig, err error) {
-	var dbInfo dbConfig
-	
+func loadConfig(path string) (config DbConfig, err error) {
+	var dbInfo DbConfig
+
 	viper.AddConfigPath(path)
 	viper.SetConfigName("app")
 	viper.SetConfigType("env")
@@ -46,7 +52,7 @@ func loadConfig(path string) (config dbConfig, err error) {
 	return dbInfo, nil
 }
 
-func NewEnv() (*env, error) {
+func NewEnv() (*Env, error) {
 	config, err := loadConfig(".")
 	if err != nil {
 		log.Println(err)
@@ -54,15 +60,47 @@ func NewEnv() (*env, error) {
 	}
 
 	db, err := gorm.Open(mysql.New(mysql.Config{
-		DSN: fmt.Sprintf(`%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local`, 
-		config.DB_USER, config.DB_PASS, config.DB_ADDRESS, config.DB_SCHEMA), // auto configure based on currently MySQL version
+		DSN: fmt.Sprintf(`%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local`,
+			config.DB_USER, config.DB_PASS, config.DB_ADDRESS, config.DB_SCHEMA), // auto configure based on currently MySQL version
 	}), &gorm.Config{
 		Logger: newLogger,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &env{
-		db: db,
+
+	tokenSecret := uuid.NewV4().String()
+
+	return &Env{
+		Db:          db,
+		TokenSecret: tokenSecret,
 	}, nil
+}
+
+func CreateToken(userID, tokenSecret string) (string, error) {
+	// Create the token
+	token := jwt_lib.New(jwt_lib.GetSigningMethod("HS256"))
+	// Set some claims
+	token.Claims = jwt_lib.MapClaims{
+		"ID":  userID,
+		"exp": time.Now().Add(time.Hour * 1).Unix(),
+	}
+	// Sign and get the complete encoded token as a string
+	tokenString, err := token.SignedString([]byte(tokenSecret))
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func HashAndSalt(userPass []byte) (string, error) {
+	// Generate "hash" to store from user password
+	hash, err := bcrypt.GenerateFromPassword([]byte(userPass), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	return string(hash), nil
 }
